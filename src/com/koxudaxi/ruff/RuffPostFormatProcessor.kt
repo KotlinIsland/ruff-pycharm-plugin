@@ -7,6 +7,8 @@ import com.intellij.psi.PsiFile
 import com.intellij.psi.codeStyle.CodeStyleSettings
 import com.intellij.psi.impl.source.codeStyle.PostFormatProcessor
 import com.jetbrains.python.psi.PyUtil
+import java.util.concurrent.Future
+import java.util.concurrent.TimeUnit
 
 
 class RuffPostFormatProcessor : PostFormatProcessor {
@@ -21,7 +23,7 @@ class RuffPostFormatProcessor : PostFormatProcessor {
 
         val formatted = executeOnPooledThread(null) {
             runRuff(pyFile, argsBase)
-        } ?: return TextRange.EMPTY_RANGE
+        }.get(30, TimeUnit.SECONDS) ?: return TextRange.EMPTY_RANGE
         val sourceDiffRange = diffRange(source.text, formatted) ?: return TextRange.EMPTY_RANGE
 
         val formattedDiffRange = diffRange(formatted, source.text) ?: return TextRange.EMPTY_RANGE

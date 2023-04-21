@@ -33,6 +33,7 @@ import org.jetbrains.annotations.SystemDependent
 import java.io.File
 import java.io.IOError
 import java.io.IOException
+import java.util.concurrent.Future
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException
 
@@ -190,20 +191,16 @@ inline fun <reified T> runRuffInBackground(
 }
 
 inline fun <reified T> executeOnPooledThread(
-    defaultResult: T, timeoutSeconds: Long = 30, crossinline action: () -> T
-): T {
-    return try {
-        ApplicationManager.getApplication().executeOnPooledThread<T> {
-            try {
-                action.invoke()
-            } catch (e: PyExecutionException) {
-                defaultResult
-            } catch (e: ProcessNotCreatedException) {
-                defaultResult
-            }
-        }.get(timeoutSeconds, TimeUnit.SECONDS)
-    } catch (e: TimeoutException) {
-        defaultResult
+    defaultResult: T, crossinline action: () -> T
+): Future<T> {
+    return ApplicationManager.getApplication().executeOnPooledThread<T> {
+        try {
+            action()
+        } catch (e: PyExecutionException) {
+            defaultResult
+        } catch (e: ProcessNotCreatedException) {
+            defaultResult
+        }
     }
 }
 
